@@ -44,3 +44,39 @@ app.post('/register', async (req, res) => {
         res.status(500).send(new Error("Server error"));
     }
 });
+
+app.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        console.log(req.body);
+
+        if (!email || !password) {
+            return res.status(400).send(new Error("Missing email or password"));
+        }
+
+        const db = getDB();
+        const users = db.collection("users");
+
+        const user = await users.findOne({ email });
+
+        // recommended: same message no matter what
+        if (!user) {
+            return res.status(401).send(new Error("Invalid credentials"));
+        }
+
+        bcrypt.compare(password, user.password, (err, result) => {
+            if (err) return res.status(500).send(new Error("Compare failed"));
+
+            if (result === true) {
+                // send user info (don’t send password hash back)
+                res.send({ email: user.email, message: "Login succesful" });
+            } else {
+                res.status(401).send(new Error("Invalid credentials"));
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send(new Error("Server error"));
+    }
+});
