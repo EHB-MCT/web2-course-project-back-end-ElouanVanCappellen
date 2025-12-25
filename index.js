@@ -1,16 +1,16 @@
 const express = require('express');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
+
+const { connectDB, getDB } = require('./db');
 
 const app = express();
 const PORT = 3000;
 
-app.use(cors());              // allow requests from front-end
-app.use(express.json());      // read JSON bodies
+app.use(cors());
+app.use(express.json());
 
-app.post('/login', (req, res) => {
-    res.send({ message: "Hello world" });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+connectDB().catch(err => {
+  console.error(err);
+  process.exit(1);
 });
