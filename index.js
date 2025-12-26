@@ -81,6 +81,35 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.get('/routes', async (req, res) => {
+    try {
+        const { sortBy, city } = req.query;
+
+        const allowedSort = ['distance', 'date', 'popularity'];
+        if (sortBy && !allowedSort.includes(sortBy)) {
+            return fail(res, 400, 'Invalid sortBy. Use distance, date or popularity.');
+        }
+
+        const db = getDB();
+        const routesCol = db.collection('Routes');
+
+        const filter = {};
+        if (city) filter.city = city;
+
+        let cursor = routesCol.find(filter);
+
+        if (sortBy === 'distance') cursor = cursor.sort({ distance_km: 1 });
+        if (sortBy === 'date') cursor = cursor.sort({ created_at: -1 });
+        if (sortBy === 'popularity') cursor = cursor.sort({ popularity: -1 });
+
+        const routes = await cursor.toArray();
+        return ok(res, { routes });
+    } catch (err) {
+        console.error(err);
+        return fail(res, 500, 'Server error');
+    }
+});
+
 app.get('/routes/:id', async (req, res) => {
     try {
         const db = getDB();
