@@ -154,3 +154,33 @@ app.post('/routes', async (req, res) => {
         return fail(res, 500, 'Server error');
     }
 });
+
+app.put('/routes/:id', async (req, res) => {
+    try {
+        const updates = req.body;
+        if (!updates || Object.keys(updates).length === 0) {
+            return fail(res, 400, 'No fields provided to update');
+        }
+
+        const db = getDB();
+        const routesCol = db.collection('Routes');
+
+        let id;
+        try {
+            id = new ObjectId(req.params.id);
+        } catch {
+            return fail(res, 400, 'Invalid route id');
+        }
+
+        const result = await routesCol.updateOne({ _id: id }, { $set: updates });
+
+        if (result.matchedCount === 0) {
+            return fail(res, 404, 'Route not found');
+        }
+
+        return ok(res, { message: 'Route updated' });
+    } catch (err) {
+        console.error(err);
+        return fail(res, 500, 'Server error');
+    }
+});
