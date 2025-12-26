@@ -6,7 +6,7 @@ let db = null;
 async function connectDB() {
     const client = new MongoClient(mongoUri);
     await client.connect();
-    db = client.db(); // uses DB name from connection string
+    db = client.db("Web2_courseproject");
     console.log("Connected to MongoDB");
     return db;
 }
