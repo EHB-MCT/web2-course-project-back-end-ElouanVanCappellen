@@ -80,3 +80,27 @@ app.post('/login', async (req, res) => {
         res.status(500).send(new Error("Server error"));
     }
 });
+
+app.get('/routes/:id', async (req, res) => {
+    try {
+        const db = getDB();
+        const routesCol = db.collection('Routes');
+
+        let id;
+        try {
+            id = new ObjectId(req.params.id);
+        } catch {
+            return fail(res, 400, 'Invalid route id');
+        }
+
+        const route = await routesCol.findOne({ _id: id });
+        if (!route) {
+            return fail(res, 404, 'Route not found');
+        }
+
+        return ok(res, { route });
+    } catch (err) {
+        console.error(err);
+        return fail(res, 500, 'Server error');
+    }
+});
