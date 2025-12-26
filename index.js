@@ -104,3 +104,53 @@ app.get('/routes/:id', async (req, res) => {
         return fail(res, 500, 'Server error');
     }
 });
+
+app.post('/routes', async (req, res) => {
+    try {
+        const {
+            name,
+            city,
+            distance_km,
+            elevation_m,
+            creator,
+            description,
+            checkpoints,
+        } = req.body;
+
+        if (!name || !city || distance_km == null || elevation_m == null || !creator || !checkpoints) {
+            return fail(res, 400, 'Missing name, city, distance_km, elevation_m, creator or checkpoints');
+        }
+
+        if (!Array.isArray(checkpoints) || checkpoints.length < 2) {
+            return fail(res, 400, 'Checkpoints must be an array with at least 2 items');
+        }
+
+        for (const cp of checkpoints) {
+            if (!cp.name || cp.latitude == null || cp.longitude == null || cp.order == null) {
+                return fail(res, 400, 'Checkpoints must include name, latitude, longitude and order');
+            }
+        }
+
+        const db = getDB();
+        const routesCol = db.collection('Routes');
+
+        const doc = {
+            name,
+            city,
+            distance_km: parseFloat(distance_km),
+            elevation_m: parseFloat(elevation_m),
+            creator,
+            description: description || '',
+            checkpoints,
+            popularity: 0,
+            created_at: new Date(),
+        };
+
+        const result = await routesCol.insertOne(doc);
+
+        return ok(res, { message: 'Route created', route_id: result.insertedId }, 201);
+    } catch (err) {
+        console.error(err);
+        return fail(res, 500, 'Server error');
+    }
+});
