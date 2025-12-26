@@ -184,3 +184,28 @@ app.put('/routes/:id', async (req, res) => {
         return fail(res, 500, 'Server error');
     }
 });
+
+app.delete('/routes/:id', async (req, res) => {
+    try {
+        const db = getDB();
+        const routesCol = db.collection('Routes');
+
+        let id;
+        try {
+            id = new ObjectId(req.params.id);
+        } catch {
+            return fail(res, 400, 'Invalid route id');
+        }
+
+        const result = await routesCol.deleteOne({ _id: id });
+
+        if (result.deletedCount === 0) {
+            return fail(res, 404, 'Route not found');
+        }
+
+        return ok(res, { message: 'Route deleted' });
+    } catch (err) {
+        console.error(err);
+        return fail(res, 500, 'Server error');
+    }
+});
