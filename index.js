@@ -3,6 +3,7 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 
 const { connectDB, getDB } = require('./db');
+const { ObjectId } = require('mongodb');
 
 const app = express();
 const PORT = 3000;
@@ -171,7 +172,7 @@ app.post('/routes', async (req, res) => {
             creator,
             description: description || '',
             checkpoints,
-            popularity: 0,
+            likedBy: [],
             created_at: new Date(),
         };
 
@@ -236,5 +237,43 @@ app.delete('/routes/:id', async (req, res) => {
     } catch (err) {
         console.error(err);
         return fail(res, 500, 'Server error');
+    }
+});
+
+app.post('/routes/:id/like', async (req, res) => {
+    try {
+        const { user } = req.body;
+
+        if (!user) {
+            return fail(res, 400, "Missing user identifier");
+        }
+
+        const db = getDB();
+        const routesCol = db.collection("Routes");
+
+        let id;
+        try {
+            id = new ObjectId(req.params.id);
+        } catch {
+            return fail(res, 400, "Invalid route id");
+        }
+
+        // Only add if user has NOT liked before
+        const result = await routesCol.updateOne(
+            { _id: id, likedBy: { $ne: user } },
+            {
+                $addToSet: { likedBy: user },
+                $inc: { popularity: 1 }
+            }
+        );
+
+        if (result.matchedCount === 0) {
+            return ok(res, { message: "Already liked or route not found" });
+        }
+
+        return ok(res, { message: "Route liked" });
+    } catch (err) {
+        console.error(err);
+        return fail(res, 500, "Server error");
     }
 });
