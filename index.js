@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
@@ -6,7 +7,7 @@ const { connectDB, getDB } = require('./db');
 const { ObjectId } = require('mongodb');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -276,4 +277,8 @@ app.post('/routes/:id/like', async (req, res) => {
         console.error(err);
         return fail(res, 500, "Server error");
     }
+});
+
+app.listen(PORT, () => {
+    console.log(`API running on port ${PORT}`);
 });

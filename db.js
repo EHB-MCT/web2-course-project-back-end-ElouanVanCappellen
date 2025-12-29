@@ -1,13 +1,24 @@
+require('dotenv').config();
 const { MongoClient } = require('mongodb');
 const { mongoUri } = require('./config');
 
 let db = null;
+let client = null;
 
 async function connectDB() {
-    const client = new MongoClient(mongoUri);
+    const mongoUri = process.env.MONGO_URI;
+    const dbName = process.env.DB_NAME || 'Web2_courseproject';
+
+    if (!mongoUri) {
+        throw new Error('Missing MONGO_URI environment variable');
+    }
+
+    client = new MongoClient(mongoUri);
     await client.connect();
-    db = client.db("Web2_courseproject");
-    console.log("Connected to MongoDB");
+
+    db = client.db(dbName);
+    console.log('Connected to MongoDB:', db.databaseName);
+
     return db;
 }
 
