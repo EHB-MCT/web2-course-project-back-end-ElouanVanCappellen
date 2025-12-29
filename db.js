@@ -1,6 +1,5 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
-const { mongoUri } = require('./config');
 
 let db = null;
 let client = null;
