@@ -17,35 +17,42 @@ connectDB().catch(err => {
     process.exit(1);
 });
 
+function ok(res, data = {}, status = 200) {
+    return res.status(status).json(data);
+}
+
+function fail(res, status = 400, message = "Error") {
+    return res.status(status).json({ error: message });
+}
+
 app.post('/register', async (req, res) => {
     try {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).send(new Error("Missing email or password"));
+            return res.status(400).json({ error: "Missing email or password" });
         }
 
         const db = getDB();
-        console.log("Using DB:", db.databaseName);
         const users = db.collection("users");
 
         const existing = await users.findOne({ email });
         if (existing) {
-            return res.status(409).send(new Error("User already exists"));
+            return res.status(409).json({ error: "User already exists" });
         }
 
-        bcrypt.hash(password, 10, async (err, hash) => {
-            if (err) return res.status(500).send(new Error("Hashing failed"));
+        const hash = await bcrypt.hash(password, 10);
 
-            await users.insertOne({ email, password: hash });
-            res.send({ message: "Register succesful" });
-        });
+        await users.insertOne({ email, password: hash });
+
+        return res.json({ message: "Register successful" });
 
     } catch (err) {
         console.error(err);
-        res.status(500).send(new Error("Server error"));
+        return res.status(500).json({ error: "Server error" });
     }
 });
+
 
 app.post('/login', async (req, res) => {
     try {
@@ -278,6 +285,51 @@ app.post('/routes/:id/like', async (req, res) => {
         return fail(res, 500, "Server error");
     }
 });
+
+app.delete('/routes/:id/like', async (req, res) => {
+    try {
+        const { user } = req.body;
+
+        if (!user) {
+            return fail(res, 400, "Missing user identifier");
+        }
+
+        const db = getDB();
+        const routesCol = db.collection("Routes");
+
+        let id;
+        try {
+            id = new ObjectId(req.params.id);
+        } catch {
+            return fail(res, 400, "Invalid route id");
+        }
+
+        // Only remove if user HAS liked before
+        const result = await routesCol.updateOne(
+            { _id: id, likedBy: user },
+            {
+                $pull: { likedBy: user },
+                $inc: { popularity: -1 }
+            }
+        );
+
+        if (result.matchedCount === 0) {
+            return ok(res, { message: "Not liked yet or route not found" });
+        }
+
+        // Prevent popularity going negative
+        await routesCol.updateOne(
+            { _id: id, popularity: { $lt: 0 } },
+            { $set: { popularity: 0 } }
+        );
+
+        return ok(res, { message: "Route unliked" });
+    } catch (err) {
+        console.error(err);
+        return fail(res, 500, "Server error");
+    }
+});
+
 
 app.listen(PORT, () => {
     console.log(`API running on port ${PORT}`);
