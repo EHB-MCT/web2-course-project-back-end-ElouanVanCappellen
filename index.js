@@ -27,23 +27,35 @@ function fail(res, status = 400, message = "Error") {
 
 app.post('/register', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, username, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: "Missing email or password" });
+        if (!email || !username || !password) {
+            return res.status(400).json({ error: "Missing email, username or password" });
         }
 
         const db = getDB();
         const users = db.collection("users");
 
-        const existing = await users.findOne({ email });
-        if (existing) {
-            return res.status(409).json({ error: "User already exists" });
+        // Check if email already exists
+        const existingEmail = await users.findOne({ email });
+        if (existingEmail) {
+            return res.status(409).json({ error: "Email already registered" });
+        }
+
+        // Check if username already exists
+        const existingUsername = await users.findOne({ username });
+        if (existingUsername) {
+            return res.status(409).json({ error: "Username already taken" });
         }
 
         const hash = await bcrypt.hash(password, 10);
 
-        await users.insertOne({ email, password: hash });
+        await users.insertOne({
+            email,
+            username,
+            password: hash,
+            created_at: new Date()
+        });
 
         return res.json({ message: "Register successful" });
 
@@ -78,7 +90,7 @@ app.post('/login', async (req, res) => {
 
             if (result === true) {
                 // send user info (don’t send password hash back)
-                res.send({ email: user.email, message: "Login succesful" });
+                res.send({ email: user.email, username: user.username, message: "Login succesful" });
             } else {
                 res.status(401).send(new Error("Invalid credentials"));
             }
