@@ -1,3 +1,6 @@
+// this code whas written with the help of Chatgpt and adapted by Elouan Van Cappellen
+// ChatGpt link: https://chatgpt.com/share/69551b13-8c54-8010-bcac-270038e8f18b
+
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
