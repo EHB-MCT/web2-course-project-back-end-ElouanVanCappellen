@@ -165,6 +165,17 @@ app.post('/routes', async (req, res) => {
             checkpoints,
         } = req.body;
 
+        if (
+            typeof name === "string" &&
+            name.trim().toLowerCase() === "streets.speed.chaos."
+        ) {
+            return res.status(200).json({
+                success: true,
+                message: "🐈 Alleycat unlocked.",
+                easterEgg: true
+            });
+        }
+
         if (!name || !city || distance_km == null || elevation_m == null || !creator || !checkpoints) {
             return fail(res, 400, 'Missing name, city, distance_km, elevation_m, creator or checkpoints');
         }
